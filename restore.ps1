@@ -27,28 +27,12 @@ CREATE TABLE Client_A_Contacts
 
 "@
 
-$InsertCSVQuery = @'
-USE ClientDB
-
-INSERT INTO dbo.Client_A_Contacts
-VALUES
-(
-    "$($_.first_name)",
-    "$($_.last_name)",
-    "$($_.city)",
-    "$($_.county)",
-    "$($_.zip)",
-    "$($_.officePhone",
-    "$($_.mobilePhone)"
-)
-
-'@
 
 
 try {
 
-New-ADOrganizationalUnit finance 
-Import-Csv ".\Downloads\financePersonnel.csv" | ForEach-Object {New-ADUser `
+New-ADOrganizationalUnit -Name "finance" 
+Import-Csv "financePersonnel.csv" | ForEach-Object {New-ADUser `
     -Name "$($_.First_Name) $($_.Last_Name)" `
     -SamAccountName $_.samAccount `
     -GivenName $_.First_Name `
@@ -59,6 +43,8 @@ Import-Csv ".\Downloads\financePersonnel.csv" | ForEach-Object {New-ADUser `
     -MobilePhone $_.MobilePhone `
     -Path "OU=finance,DC=ucertify,DC=com"}
 
+Push-Location
+
 Import-Module sqlps -DisableNameChecking
 
 $ServerObject = New-Object Microsoft.SqlServer.Management.Smo.Server($SqlServer)
@@ -68,12 +54,13 @@ Write-Host $DBobject "create success @ " $DBobject.CreateDate
 
 Invoke-sqlcmd -ServerInstance $SqlServer -Database $DBname -Query $CreateTableQuery
 
+Pop-Location
 
-Import-Csv "C:\Users\Administrator\Downloads\NewClientData.csv" | ForEach-Object {Invoke-sqlcmd -ServerInstance $SqlServer -Database $DBname -Query "insert into dbo.Client_A_Contacts values ('$($_.first_name)','$($_.last_name)','$($_.city)','$($_.county)','$($_.zip)','$($_.officePhone)','$($_.mobilePhone)')"}
+Import-Csv "NewClientData.csv" | ForEach-Object {Invoke-sqlcmd -ServerInstance $SqlServer -Database $DBname -Query "insert into dbo.Client_A_Contacts values ('$($_.first_name)','$($_.last_name)','$($_.city)','$($_.county)','$($_.zip)','$($_.officePhone)','$($_.mobilePhone)')"}
 
 
  }
 
 catch [System.OutOfMemoryException] {
-    Write-Host "System.OutOfMemoryException" 
+    Write-Host "Caught: System.OutOfMemoryException" 
 }
